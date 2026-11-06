@@ -33,20 +33,39 @@ class Card:
             else:
                 return self.damage * self.dice[3]
 
-class Opponent():
-    def __init__(self, name: str, leanings: list[int], sk: int, pt: int):
+
+
+class PlayerOrOpponent():
+    def __init__(self, name: str, leanings: list[int], sk: int, pt: int, handSize: int, deck: list[Card]):
         self.name = name
         self.leanings = leanings
         self.sk = sk
         self.pt = pt
+        self.handSize = handSize
+        self.hand = []
+        self.draw = deck
+        self.discard = []
 
     def generateLeaning(self):
             optList = (['p'] * self.leanings[0]) + (['e'] * self.leanings[1]) + (['l'] * self.leanings[2]) + (['m'] * self.leanings[3]) 
             return random.choice(optList)  
 
-    def changeSk(self, change):
-        self.sk -= change
+    def shuffle(self, pile):
+        self.pile = random.shuffle(pile)
 
+    def drawCards(self):
+        if len(self.draw) == 0:
+            random.shuffle(self.discard)
+            self.draw = list.copy(self.discard)
+            self.discard = []
+        while len(self.hand) < self.handSize:
+            self.hand.append(self.draw.pop(0)) 
+
+    def playCard(self):
+        self.shuffle(self.hand)
+        toPlay = self.hand.pop(0)
+        self.discard.append(toPlay)
+        return toPlay
 
 def playCards(plrCard, oppCard, opp):
 
@@ -64,7 +83,7 @@ def playCards(plrCard, oppCard, opp):
     oppDmg = oppCard.getDmg()
 
     change = ( plrDmg - oppDmg ) * leaningMultiplier
-    opp.changeSk(change)
+    opp.sk -= change
 
     print('player plays', plrCard.name, 'for', plrDmg)
     print('opponent plays', oppCard.name, 'for', oppDmg)
@@ -74,10 +93,48 @@ def playCards(plrCard, oppCard, opp):
     
     return
 
-def simulate(opp: Opponent, plrDeck: list[Card], oppDeck: list[Card]):
-    # tba: drawing and discarding and shuffling
-    playCards(plrDeck[0], oppDeck[0], opp)
+def simulateRound(plr: PlayerOrOpponent, opp: PlayerOrOpponent):
 
+    print('ℹ️  plr draw is ' + str([card.name for card in plr.draw]))
+    print('ℹ️  plr hand is ' + str([card.name for card in plr.hand]))
+    print('ℹ️  plr discard is ' + str([card.name for card in plr.discard]))
+    print('ℹ️  opp draw is ' + str([card.name for card in opp.draw]))
+    print('ℹ️  opp hand is ' + str([card.name for card in opp.hand]))
+    print('ℹ️  opp discard is ' + str([card.name for card in opp.discard]))
+
+    # player draws up to hand size
+    plr.drawCards()
+
+    # opponent draws up to hand size
+    opp.drawCards()
+
+    # player and opponent play random cards
+    plrCard = plr.playCard()
+    oppCard = opp.playCard()    
+    playCards(plrCard, oppCard, opp)
+
+
+def simulateDispute(plr: PlayerOrOpponent, opp: PlayerOrOpponent):
+
+    # shuffle draw piles
+    random.shuffle(plr.draw)
+    random.shuffle(opp.draw)
+
+    # simulate a bunch of rounds
+    turnsTaken = 0
+    patienceRanOut = True
+    for _ in range(opp.pt):
+        simulateRound(plr, opp)
+        turnsTaken += 1
+        if markus.sk <= 0:
+            break
+    if markus.sk <= 0:
+        patienceRanOut = False
+
+    if patienceRanOut:
+        print('🟥 patience ran out in', turnsTaken, 'turns')
+    else:
+        print('🟢 dispute won in', turnsTaken, 'turns')
 
 '''
 MAIN STUFF THAT RUNS
@@ -86,27 +143,14 @@ MAIN STUFF THAT RUNS
 
 CARDS = {
     'hug': Card('hug', [1,0,0,0], 'friendship & love', None, 5),
-    'strokeOfDoubt': Card('stroke of doubt', [0,0,0,1], 'pang of questioning', None, 2)
+    'hug2': Card('hug2', [1,0,0,0], 'friendship & love', None, 5),
+    'hug3': Card('hug3', [1,0,0,0], 'friendship & love', None, 5),
+    'strokeOfDoubt': Card('stroke of doubt', [0,0,0,1], 'pang of questioning', None, 2),
+    'strokeOfDoubt2': Card('stroke of doubt2', [0,0,0,1], 'pang of questioning', None, 2),
+    'strokeOfDoubt3': Card('stroke of doubt3', [0,0,0,1], 'pang of questioning', None, 2)
 }
 
-markus = Opponent('markus', [75, 15, 9, 1], 10, 3)
-currentOpp = markus
+markus = PlayerOrOpponent('markus', [75, 15, 9, 1], 10, 3, 1, [CARDS['strokeOfDoubt'], CARDS['strokeOfDoubt2'], CARDS['strokeOfDoubt3']])
+player = PlayerOrOpponent('player', None, None, None, 1, [CARDS['hug'], CARDS['hug2'], CARDS['hug3']])
 
-print()
-turnsTaken = 0
-patienceRanOut = True
-for _ in range(currentOpp.pt):
-    simulate(markus, [CARDS['hug']], [CARDS['strokeOfDoubt']])
-    turnsTaken += 1
-    if markus.sk <= 0:
-        break
-if markus.sk <= 0:
-    patienceRanOut = False
-
-
-if patienceRanOut:
-    print('🟥 patience ran out in', turnsTaken, 'turns')
-else:
-    print('🟢 dispute won in', turnsTaken, 'turns')
-
-print()
+simulateDispute(player, markus)
