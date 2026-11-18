@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://4o6g3wtnjqkc"]
 
-[ext_resource type="PackedScene" uid="uid://cvkl4eb4jh3tn" path="res://Scenes/player.tscn" id="1_wcnh4"]
+[ext_resource type="PackedScene" uid="uid://cvkl4eb4jh3tn" path="res://Scenes/characters/player.tscn" id="1_1reab"]
 
 [node name="game" type="Node2D"]
 
@@ -8,5 +8,5 @@
 position = Vector2(36, 41)
 zoom = Vector2(4, 4)
 
-[node name="player" parent="." instance=ExtResource("1_wcnh4")]
+[node name="player" parent="." instance=ExtResource("1_1reab")]
 position = Vector2(36, 41)
